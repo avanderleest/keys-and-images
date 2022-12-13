@@ -1,0 +1,65 @@
+volumes:
+  beta-data:
+    external: true
+services:
+  database:
+    image: postgres:14.2-bullseye
+    container_name: db
+    volumes:
+      - beta-data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=key,image
+      - POSTGRES_PASSWORD=test-databases
+    ports:
+      - 15432:5432
+  key-api:
+    container_name: key-api
+    build:
+      context: ./key/api
+      dockerfile: ./Dockerfile.dev
+    ports:
+      - "8100:8000"
+    volumes:
+      - ./key/api:/app
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: postgres://key:password@database:5432/key
+      WAIT_HOSTS: database:5432
+      WAIT_TIMEOUT: 240
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOW_ALL_ORIGINS: ${ALLOW_ALL_ORIGINS}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      DATABASE_ENGINE: ${DATABASE_ENGINE}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+  image-api:
+    container_name: image-api
+    build:
+      context: ./image/api
+      dockerfile: ./Dockerfile.dev
+    ports:
+      - "8100:8000"
+    volumes:
+      - ./image/api:/app
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: postgres://image:password@database:5432/image
+      WAIT_HOSTS: database:5432
+      WAIT_TIMEOUT: 240
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOW_ALL_ORIGINS: ${ALLOW_ALL_ORIGINS}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      DATABASE_ENGINE: ${DATABASE_ENGINE}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
